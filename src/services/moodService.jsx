@@ -4,7 +4,7 @@ export const moodService = {
   addMood: async (moodData) => {
     try {
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      today.setHours(12, 0, 0, 0);
       const response = await axiosInstance.post("/add", {
         mood: moodData,
         date: today.toISOString(),
