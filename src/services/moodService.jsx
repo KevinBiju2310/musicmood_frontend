@@ -3,7 +3,12 @@ import axiosInstance from "../api/axiosInstance";
 export const moodService = {
   addMood: async (moodData) => {
     try {
-      const response = await axiosInstance.post("/add", { mood: moodData });
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const response = await axiosInstance.post("/add", {
+        mood: moodData,
+        date: today.toISOString(),
+      });
       return response.data.mood;
     } catch (error) {
       console.error("Error adding mood:", error);
@@ -12,8 +17,8 @@ export const moodService = {
   },
   getMoodsByDateRange: async (startDate, endDate) => {
     try {
-      const start = startDate.toISOString()
-      const end = endDate.toISOString()
+      const start = startDate.toISOString();
+      const end = endDate.toISOString();
       const response = await axiosInstance.get(
         `/range?start=${start}&end=${end}`
       );

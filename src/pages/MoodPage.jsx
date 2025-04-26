@@ -68,7 +68,9 @@ const MoodPage = () => {
     return weekDates;
   }
   function formatDateKey(date) {
-    return date.toISOString().split("T")[0];
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+    return normalizedDate.toISOString().split("T")[0];
   }
 
   useEffect(() => {
@@ -267,7 +269,9 @@ const MoodPage = () => {
         <div className="bg-white rounded-xl shadow-xl overflow-hidden mb-8">
           <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6">
             <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold text-white">Your Mood Melody</h1>
+              <h1 className="text-3xl font-bold text-white">
+                Your Mood Melody
+              </h1>
               <div className="flex space-x-3">
                 <button
                   className={`px-5 py-2 rounded-full flex items-center transition-all ${
@@ -380,7 +384,9 @@ const MoodPage = () => {
                         transition={{ duration: 0.5 }}
                         className="inline-block"
                       >
-                        <span className="font-medium text-lg">Playing Weekly Melody</span>
+                        <span className="font-medium text-lg">
+                          Playing Weekly Melody
+                        </span>
                       </motion.div>
                     </div>
                   )}
@@ -389,7 +395,9 @@ const MoodPage = () => {
             </AnimatePresence>
 
             <div className="mb-8 p-5 bg-gray-50 rounded-xl border border-gray-100">
-              <h3 className="text-sm font-medium mb-3 text-gray-700">Mood Legend</h3>
+              <h3 className="text-sm font-medium mb-3 text-gray-700">
+                Mood Legend
+              </h3>
               <div className="flex flex-wrap gap-4">
                 {moodOptions.map((mood) => (
                   <div key={mood.name} className="flex items-center gap-2">
@@ -424,7 +432,9 @@ const MoodPage = () => {
                 </div>
                 <div className="mt-10 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-semibold text-gray-800">Today's Moods</h3>
+                    <h3 className="text-xl font-semibold text-gray-800">
+                      Today's Moods
+                    </h3>
                     <div className="flex items-center">
                       <span className="text-sm text-gray-500 mr-4">
                         {todayMoods.length}/3 moods recorded
@@ -485,7 +495,8 @@ const MoodPage = () => {
                   </button>
 
                   <h2 className="text-xl font-semibold text-gray-800">
-                    Week of {currentWeek[0].formattedDate} - {currentWeek[6].formattedDate}
+                    Week of {currentWeek[0].formattedDate} -{" "}
+                    {currentWeek[6].formattedDate}
                   </h2>
 
                   <button
@@ -513,7 +524,11 @@ const MoodPage = () => {
                         }`}
                       >
                         <div className="text-center mb-3">
-                          <div className={`text-base font-semibold ${isToday ? "text-blue-700" : "text-gray-700"}`}>
+                          <div
+                            className={`text-base font-semibold ${
+                              isToday ? "text-blue-700" : "text-gray-700"
+                            }`}
+                          >
                             {day.dayName}
                           </div>
                           <div className="text-sm text-gray-500">
@@ -549,10 +564,12 @@ const MoodPage = () => {
                   <button
                     onClick={playWeeklyMelody}
                     disabled={
-                      isPlaying || Object.values(weeklyMoods).flat().length === 0
+                      isPlaying ||
+                      Object.values(weeklyMoods).flat().length === 0
                     }
                     className={`flex items-center px-6 py-3 rounded-lg font-medium shadow-sm transition-all ${
-                      isPlaying || Object.values(weeklyMoods).flat().length === 0
+                      isPlaying ||
+                      Object.values(weeklyMoods).flat().length === 0
                         ? "bg-gray-300 text-gray-500"
                         : "bg-blue-600 hover:bg-blue-700 text-white"
                     }`}
@@ -570,7 +587,9 @@ const MoodPage = () => {
                     }`}
                   >
                     <Download className="mr-2 w-5 h-5" />{" "}
-                    {isDownloading ? "Downloading..." : "Download Weekly Melody"}
+                    {isDownloading
+                      ? "Downloading..."
+                      : "Download Weekly Melody"}
                   </button>
                 </div>
               </>
