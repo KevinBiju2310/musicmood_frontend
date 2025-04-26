@@ -4,6 +4,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { googleLogin } from "../services/authService";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { setUser } from "../Redux/userSlice";
 import { logout } from "../services/authService";
 import moodImg from "../assets/moodmusic_login.jpg";
@@ -12,6 +13,7 @@ import moodbgd from "../assets/moodmusic_background.jpg";
 const Navbar = () => {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector((state) => state.user.user);
 
   const openSignInModal = () => {
@@ -51,6 +53,7 @@ const Navbar = () => {
           color: "white",
         },
       });
+      navigate("/");
     } catch (err) {
       console.error("Logout error:", err);
       toast.error("Something went wrong during logout.");

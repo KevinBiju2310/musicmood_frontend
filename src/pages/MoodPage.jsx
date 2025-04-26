@@ -8,8 +8,10 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Music,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 import * as Tone from "tone";
 import MoodShape from "../Components/MoodShape";
 import { moodService } from "../services/moodService";
@@ -35,9 +37,11 @@ const MoodPage = () => {
   const [view, setView] = useState("today");
   const [currentWeek, setCurrentWeek] = useState(getWeekDates());
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(false);
+  const [activeNoteIndex, setActiveNoteIndex] = useState(-1);
 
-  function getWeekDates() {
-    const date = new Date();
+  function getWeekDates(inputDate = new Date()) {
+    const date = new Date(inputDate);
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
 
@@ -124,6 +128,10 @@ const MoodPage = () => {
   };
 
   const handleMoodSelect = async (mood) => {
+    if (todayMoods.length >= 3) {
+      toast.error("You can only record up to 3 moods per day.");
+      return;
+    }
     setCurrentMood(mood);
     if (synth) {
       synth.triggerAttackRelease(mood.note, "8n");
@@ -145,21 +153,29 @@ const MoodPage = () => {
       return;
     }
     setIsPlaying(true);
+    setShowAnimation(true);
     const notes = todayMoods.map((mood) => mood.note);
     try {
       await Tone.start();
       const now = Tone.now();
       notes.forEach((note, index) => {
         synth.triggerAttackRelease(note, "8n", now + index * 0.5);
+        setTimeout(() => {
+          setActiveNoteIndex(index);
+        }, index * 500);
       });
       Tone.Transport.stop();
       setTimeout(() => {
         setIsPlaying(false);
+        setShowAnimation(false);
+        setActiveNoteIndex(-1);
       }, notes.length * 500 + 500);
     } catch (error) {
       console.error("Error playing today's melody:", error);
       toast.error("Error playing melody. Please try again.");
       setIsPlaying(false);
+      setShowAnimation(false);
+      setActiveNoteIndex(-1);
     }
   };
 
@@ -171,55 +187,49 @@ const MoodPage = () => {
     }
 
     setIsPlaying(true);
+    setShowAnimation(true);
     const notes = weeklyMoodsList.map((mood) => mood.note);
     try {
       await Tone.start();
       const now = Tone.now();
       notes.forEach((note, index) => {
         synth.triggerAttackRelease(note, "8n", now + index * 0.5);
+        setTimeout(() => {
+          setActiveNoteIndex(index);
+        }, index * 500);
       });
       Tone.Transport.stop();
       setTimeout(() => {
         setIsPlaying(false);
+        setShowAnimation(false);
+        setActiveNoteIndex(-1);
       }, notes.length * 500 + 500);
     } catch (error) {
       console.error("Error playing today's melody:", error);
       toast.error("Error playing melody. Please try again.");
       setIsPlaying(false);
+      setShowAnimation(false);
+      setActiveNoteIndex(-1);
     }
   };
 
-  const downloadMelody = async (type) => {
-    let notes = [];
-    let fileName = "";
-    if (type === "today") {
-      if (todayMoods.length === 0) {
-        alert("No moods recorded today to download!");
-        return;
-      }
-      notes = todayMoods.map((mood) => mood.note);
-      fileName = `MoodMelody_${new Date()
-        .toLocaleDateString()
-        .replace(/\//g, "-")}.wav`;
-    } else if (type === "weekly") {
-      const weeklyMoodsList = Object.values(weeklyMoods).flat();
-      if (weeklyMoodsList.length === 0) {
-        alert("No moods recorded this week to download!");
-        return;
-      }
-      notes = weeklyMoodsList.map((mood) => mood.note);
-      fileName = `WeeklyMoodMelody_${currentWeek[0].formattedDate.replace(
-        /\s/g,
-        ""
-      )}_${currentWeek[6].formattedDate.replace(/\s/g, "")}.wav`;
-    } else {
-      alert("Invalid melody type selected.");
+  const downloadMelody = async () => {
+    const weeklyMoodsList = Object.values(weeklyMoods).flat();
+    if (weeklyMoodsList.length === 0) {
+      alert("No moods recorded this week to download!");
       return;
     }
+
+    const notes = weeklyMoodsList.map((mood) => mood.note);
+    const fileName = `WeeklyMoodMelody_${currentWeek[0].formattedDate.replace(
+      /\s/g,
+      ""
+    )}_${currentWeek[6].formattedDate.replace(/\s/g, "")}.wav`;
 
     try {
       setIsDownloading(true);
       await audioService.generateAudio(notes, fileName);
+      toast.success("Audio file generated");
     } catch (error) {
       console.error("Error downloading melody:", error);
       alert("There was an error generating your melody. Please try again.");
@@ -241,271 +251,332 @@ const MoodPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
         <Navbar />
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
       <Navbar />
-      <div className="max-w-2xl mx-auto p-6 mt-8 bg-white rounded-lg shadow-lg">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Your Mood Melody</h1>
-          <div className="flex space-x-2">
-            <button
-              className={`px-4 py-2 rounded-md ${
-                view === "today"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-              onClick={() => setView("today")}
-            >
-              Today
-            </button>
-            <button
-              className={`flex items-center px-4 py-2 rounded-md ${
-                view === "weekly"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-              onClick={() => setView("weekly")}
-            >
-              <Calendar className="mr-1 w-4 h-4" /> Weekly
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium mb-2">Mood Legend</h3>
-          <div className="flex flex-wrap gap-3">
-            {moodOptions.map((mood) => (
-              <div key={mood.name} className="flex items-center gap-2">
-                <MoodShape mood={mood} size="small" />
-                <span className="text-xs">{mood.name}</span>
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="bg-white rounded-xl shadow-xl overflow-hidden mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6">
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold text-white">Your Mood Melody</h1>
+              <div className="flex space-x-3">
+                <button
+                  className={`px-5 py-2 rounded-full flex items-center transition-all ${
+                    view === "today"
+                      ? "bg-white text-blue-700 shadow-md"
+                      : "bg-blue-500 text-white bg-opacity-30 hover:bg-opacity-40"
+                  }`}
+                  onClick={() => setView("today")}
+                >
+                  Today
+                </button>
+                <button
+                  className={`flex items-center px-5 py-2 rounded-full transition-all ${
+                    view === "weekly"
+                      ? "bg-white text-blue-700 shadow-md"
+                      : "bg-blue-500 text-white bg-opacity-30 hover:bg-opacity-40"
+                  }`}
+                  onClick={() => setView("weekly")}
+                >
+                  <Calendar className="mr-2 w-4 h-4" /> Weekly
+                </button>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
 
-        {view === "today" ? (
-          <>
-            <div className="mb-8">
-              <h2 className="text-xl font-medium mb-4">
-                How are you feeling today?
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-8">
+            <AnimatePresence>
+              {showAnimation && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="mb-8 p-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl shadow-inner"
+                >
+                  <div className="flex justify-center items-center h-32">
+                    <div className="flex items-end space-x-3">
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <motion.div
+                          key={i}
+                          animate={{
+                            height: [20, 60, 20],
+                          }}
+                          transition={{
+                            duration: 0.5,
+                            ease: "easeInOut",
+                            repeat: Infinity,
+                            repeatType: "reverse",
+                            delay: i * 0.1,
+                          }}
+                          className="w-4 bg-blue-500 rounded-t-md"
+                          style={{ height: 20 }}
+                        />
+                      ))}
+                      <motion.div
+                        animate={{
+                          rotate: [0, 360],
+                          scale: [1, 1.2, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          ease: "easeInOut",
+                          repeat: Infinity,
+                        }}
+                      >
+                        <Music className="w-14 h-14 text-purple-600" />
+                      </motion.div>
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <motion.div
+                          key={i + 5}
+                          animate={{
+                            height: [20, 60, 20],
+                          }}
+                          transition={{
+                            duration: 0.5,
+                            ease: "easeInOut",
+                            repeat: Infinity,
+                            repeatType: "reverse",
+                            delay: (i + 5) * 0.1,
+                          }}
+                          className="w-4 bg-blue-500 rounded-t-md"
+                          style={{ height: 20 }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {view === "today" &&
+                    activeNoteIndex >= 0 &&
+                    activeNoteIndex < todayMoods.length && (
+                      <div className="text-center mt-4">
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 0.5 }}
+                          className="inline-block"
+                        >
+                          <span className="font-medium text-lg">Playing: </span>
+                          <span
+                            className={`px-4 py-2 rounded-full ${todayMoods[activeNoteIndex].color} text-white font-semibold`}
+                          >
+                            {todayMoods[activeNoteIndex].name}
+                          </span>
+                        </motion.div>
+                      </div>
+                    )}
+
+                  {view === "weekly" && activeNoteIndex >= 0 && (
+                    <div className="text-center mt-4">
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 0.5 }}
+                        className="inline-block"
+                      >
+                        <span className="font-medium text-lg">Playing Weekly Melody</span>
+                      </motion.div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="mb-8 p-5 bg-gray-50 rounded-xl border border-gray-100">
+              <h3 className="text-sm font-medium mb-3 text-gray-700">Mood Legend</h3>
+              <div className="flex flex-wrap gap-4">
                 {moodOptions.map((mood) => (
-                  <button
-                    key={mood.name}
-                    className={`p-3 rounded-md transition-all ${
-                      currentMood?.name === mood.name
-                        ? `${mood.color} text-white`
-                        : "bg-gray-100 hover:bg-gray-200"
-                    }`}
-                    onClick={() => handleMoodSelect(mood)}
-                  >
-                    {mood.name}
-                  </button>
+                  <div key={mood.name} className="flex items-center gap-2">
+                    <MoodShape mood={mood} size="small" />
+                    <span className="text-sm font-medium">{mood.name}</span>
+                  </div>
                 ))}
               </div>
             </div>
-            <div className="mt-8">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Today's Moods</h3>
-                {todayMoods.length > 0 && (
-                  <button
-                    // onClick={openRemixModal}
-                    className="flex items-center text-sm px-3 py-1 bg-purple-100 hover:bg-purple-200 rounded-md text-purple-800"
-                  >
-                    <Edit className="mr-1 w-4 h-4" /> Remix
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {todayMoods.length === 0 ? (
-                  <p className="text-gray-500">
-                    No moods recorded yet. Select a mood above to begin.
-                  </p>
-                ) : (
-                  todayMoods.map((mood, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() =>
-                        synth?.triggerAttackRelease(mood.note, "8n")
-                      }
-                    >
-                      <MoodShape mood={mood} size="full" />
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button
-                onClick={playTodayMelody}
-                disabled={isPlaying || todayMoods.length === 0}
-                className={`flex items-center px-4 py-2 rounded-md ${
-                  isPlaying || todayMoods.length === 0
-                    ? "bg-gray-300 text-gray-500"
-                    : "bg-blue-500 hover:bg-blue-600 text-white"
-                }`}
-              >
-                <Play className="mr-1 w-4 h-4" />{" "}
-                {isPlaying ? "Playing..." : "Play Melody"}
-              </button>
 
-              <button
-                onClick={() => downloadMelody("today")}
-                disabled={todayMoods.length === 0}
-                className={`flex items-center px-4 py-2 rounded-md ${
-                  todayMoods.length === 0
-                    ? "bg-gray-300 text-gray-500"
-                    : "bg-green-500 hover:bg-green-600 text-white"
-                }`}
-              >
-                <Download className="mr-1 w-4 h-4" />{" "}
-                {isDownloading ? "Downloading..." : "Download Melody"}
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex justify-between items-center mb-4">
-              <button
-                onClick={() => navigateWeek("prev")}
-                className="p-2 bg-gray-100 hover:bg-gray-200 rounded-md"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <h2 className="text-lg font-medium">
-                Week of {currentWeek[0].formattedDate} -{" "}
-                {currentWeek[6].formattedDate}
-              </h2>
-
-              <button
-                onClick={() => navigateWeek("next")}
-                className="p-2 bg-gray-100 hover:bg-gray-200 rounded-md"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="grid grid-cols-7 gap-2 mb-6">
-              {currentWeek.map((day) => {
-                const dayKey = formatDateKey(day.date);
-                const dayMoods = weeklyMoods[dayKey] || [];
-                const isToday =
-                  new Date().toDateString() === day.date.toDateString();
-
-                return (
-                  <div
-                    key={dayKey}
-                    className={`p-3 rounded-md ${
-                      isToday
-                        ? "bg-blue-50 border border-blue-200"
-                        : "bg-gray-50"
-                    }`}
-                  >
-                    <div className="text-center mb-2">
-                      <div className="text-sm font-medium">{day.dayName}</div>
-                      <div className="text-xs text-gray-500">
-                        {day.formattedDate}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1 justify-center">
-                      {dayMoods.length === 0 ? (
-                        <div className="w-full text-center text-xs text-gray-400 mt-2">
-                          No moods
-                        </div>
-                      ) : (
-                        dayMoods.map((mood, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() =>
-                              synth?.triggerAttackRelease(mood.note, "8n")
-                            }
-                          >
-                            <MoodShape mood={mood} size="small" />
-                          </div>
-                        ))
-                      )}
+            {view === "today" ? (
+              <>
+                <div className="mb-10">
+                  <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+                    How are you feeling today?
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+                    {moodOptions.map((mood) => (
+                      <button
+                        key={mood.name}
+                        className={`p-4 rounded-lg transition-all shadow-sm hover:shadow ${
+                          currentMood?.name === mood.name
+                            ? `${mood.color} text-white font-medium`
+                            : "bg-white hover:bg-gray-50 border border-gray-100"
+                        }`}
+                        onClick={() => handleMoodSelect(mood)}
+                      >
+                        {mood.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-10 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-semibold text-gray-800">Today's Moods</h3>
+                    <div className="flex items-center">
+                      <span className="text-sm text-gray-500 mr-4">
+                        {todayMoods.length}/3 moods recorded
+                      </span>
+                      {/* {todayMoods.length > 0 && (
+                        <button
+                          className="flex items-center text-sm px-4 py-2 bg-purple-100 hover:bg-purple-200 rounded-lg text-purple-800 transition-all font-medium"
+                        >
+                          <Edit className="mr-2 w-4 h-4" /> Remix
+                        </button>
+                      )} */}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg mb-6">
-              <h3 className="text-lg font-medium mb-3">Weekly Mood Pattern</h3>
+                  <div className="flex flex-wrap gap-4 mt-5">
+                    {todayMoods.length === 0 ? (
+                      <p className="text-gray-500 py-4">
+                        No moods recorded yet. Select a mood above to begin.
+                      </p>
+                    ) : (
+                      todayMoods.map((mood, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() =>
+                            synth?.triggerAttackRelease(mood.note, "8n")
+                          }
+                          className="cursor-pointer transition-transform hover:scale-105"
+                        >
+                          <MoodShape mood={mood} size="full" />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div className="mt-8 flex flex-wrap gap-4">
+                  <button
+                    onClick={playTodayMelody}
+                    disabled={isPlaying || todayMoods.length === 0}
+                    className={`flex items-center px-6 py-3 rounded-lg font-medium shadow-sm transition-all ${
+                      isPlaying || todayMoods.length === 0
+                        ? "bg-gray-300 text-gray-500"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
+                  >
+                    <Play className="mr-2 w-5 h-5" />{" "}
+                    {isPlaying ? "Playing..." : "Play Melody"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <button
+                    onClick={() => navigateWeek("prev")}
+                    className="p-3 bg-white hover:bg-gray-50 rounded-lg shadow-sm border border-gray-100 flex items-center"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    <span className="ml-1 text-gray-700">Previous</span>
+                  </button>
 
-              {/* Debug information */}
-              <div className="text-xs text-gray-500 mb-2">
-                Data loaded:{" "}
-                {Object.keys(weeklyMoods).length > 0 ? "Yes" : "No"} | Total
-                moods: {Object.values(weeklyMoods).flat().length}
-              </div>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Week of {currentWeek[0].formattedDate} - {currentWeek[6].formattedDate}
+                  </h2>
 
-              <div className="h-32 flex items-end space-x-1 border-b border-gray-200">
-                {currentWeek.map((day) => {
-                  const dayKey = formatDateKey(day.date);
-                  const dayMoods = weeklyMoods[dayKey] || [];
-                  // Make bars more visible - minimum height of 20% and larger multiplier
-                  const height =
-                    dayMoods.length > 0
-                      ? Math.min(100, 30 + dayMoods.length * 15)
-                      : 10;
+                  <button
+                    onClick={() => navigateWeek("next")}
+                    className="p-3 bg-white hover:bg-gray-50 rounded-lg shadow-sm border border-gray-100 flex items-center"
+                  >
+                    <span className="mr-1 text-gray-700">Next</span>
+                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-7 gap-3 mb-8">
+                  {currentWeek.map((day) => {
+                    const dayKey = formatDateKey(day.date);
+                    const dayMoods = weeklyMoods[dayKey] || [];
+                    const isToday =
+                      new Date().toDateString() === day.date.toDateString();
 
-                  return (
-                    <div
-                      key={dayKey}
-                      className="flex-1 flex flex-col items-center"
-                    >
-                      <div className="text-xs mb-1">{dayMoods.length || 0}</div>
+                    return (
                       <div
-                        className="w-4/5 bg-blue-500 rounded-t-md transition-all duration-700 ease-out transform hover:scale-105"
-                        style={{ height: `${height}%` }}
-                      ></div>
-                      <div className="text-xs mt-1">{day.dayName}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={playWeeklyMelody}
-                disabled={
-                  isPlaying || Object.values(weeklyMoods).flat().length === 0
-                }
-                className={`flex items-center px-4 py-2 rounded-md ${
-                  isPlaying || Object.values(weeklyMoods).flat().length === 0
-                    ? "bg-gray-300 text-gray-500"
-                    : "bg-blue-500 hover:bg-blue-600 text-white"
-                }`}
-              >
-                <Play className="mr-1 w-4 h-4" />{" "}
-                {isPlaying ? "Playing..." : "Play Weekly Melody"}
-              </button>
-              <button
-                onClick={() => downloadMelody("weekly")}
-                disabled={Object.values(weeklyMoods).flat().length === 0}
-                className={`flex items-center px-4 py-2 rounded-md ${
-                  Object.values(weeklyMoods).flat().length === 0
-                    ? "bg-gray-300 text-gray-500"
-                    : "bg-green-500 hover:bg-green-600 text-white"
-                }`}
-              >
-                <Download className="mr-1 w-4 h-4" />{" "}
-                {isDownloading ? "Downloading..." : "Download Weekly Melody"}
-              </button>
-            </div>
-          </>
-        )}
+                        key={dayKey}
+                        className={`p-4 rounded-lg shadow-sm ${
+                          isToday
+                            ? "bg-blue-50 border-2 border-blue-200"
+                            : "bg-white border border-gray-100"
+                        }`}
+                      >
+                        <div className="text-center mb-3">
+                          <div className={`text-base font-semibold ${isToday ? "text-blue-700" : "text-gray-700"}`}>
+                            {day.dayName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {day.formattedDate}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 justify-center min-h-16">
+                          {dayMoods.length === 0 ? (
+                            <div className="w-full text-center text-xs text-gray-400 mt-3">
+                              No moods
+                            </div>
+                          ) : (
+                            dayMoods.map((mood, idx) => (
+                              <div
+                                key={idx}
+                                onClick={() =>
+                                  synth?.triggerAttackRelease(mood.note, "8n")
+                                }
+                                className="cursor-pointer transition-transform hover:scale-110"
+                              >
+                                <MoodShape mood={mood} size="small" />
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-8 flex flex-wrap gap-4">
+                  <button
+                    onClick={playWeeklyMelody}
+                    disabled={
+                      isPlaying || Object.values(weeklyMoods).flat().length === 0
+                    }
+                    className={`flex items-center px-6 py-3 rounded-lg font-medium shadow-sm transition-all ${
+                      isPlaying || Object.values(weeklyMoods).flat().length === 0
+                        ? "bg-gray-300 text-gray-500"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
+                  >
+                    <Play className="mr-2 w-5 h-5" />{" "}
+                    {isPlaying ? "Playing..." : "Play Weekly Melody"}
+                  </button>
+                  <button
+                    onClick={() => downloadMelody()}
+                    disabled={Object.values(weeklyMoods).flat().length === 0}
+                    className={`flex items-center px-6 py-3 rounded-lg font-medium shadow-sm transition-all ${
+                      Object.values(weeklyMoods).flat().length === 0
+                        ? "bg-gray-300 text-gray-500"
+                        : "bg-green-600 hover:bg-green-700 text-white"
+                    }`}
+                  >
+                    <Download className="mr-2 w-5 h-5" />{" "}
+                    {isDownloading ? "Downloading..." : "Download Weekly Melody"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
