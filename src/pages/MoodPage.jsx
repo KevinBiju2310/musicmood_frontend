@@ -11,17 +11,19 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import * as Tone from "tone";
+import MoodShape from "../Components/MoodShape";
 import { moodService } from "../services/moodService";
+import { audioService } from "../services/audioService";
 
 const MoodPage = () => {
   const moodOptions = [
-    { name: "Happy", note: "C4", color: "bg-yellow-400" },
-    { name: "Calm", note: "E4", color: "bg-blue-300" },
-    { name: "Energetic", note: "G4", color: "bg-red-500" },
-    { name: "Sad", note: "A3", color: "bg-indigo-400" },
-    { name: "Anxious", note: "D4", color: "bg-purple-500" },
-    { name: "Focused", note: "F4", color: "bg-green-400" },
-    { name: "Tired", note: "B3", color: "bg-gray-400" },
+    { name: "Happy", note: "C4", color: "bg-yellow-400", shape: "circle" },
+    { name: "Calm", note: "E4", color: "bg-blue-300", shape: "square" },
+    { name: "Energetic", note: "G4", color: "bg-red-500", shape: "triangle" },
+    { name: "Sad", note: "A3", color: "bg-indigo-400", shape: "tear" },
+    { name: "Anxious", note: "D4", color: "bg-purple-500", shape: "diamond" },
+    { name: "Focused", note: "F4", color: "bg-green-400", shape: "hexagon" },
+    { name: "Tired", note: "B3", color: "bg-gray-400", shape: "cloud" },
   ];
 
   const [currentMood, setCurrentMood] = useState(null);
@@ -32,11 +34,12 @@ const MoodPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [view, setView] = useState("today");
   const [currentWeek, setCurrentWeek] = useState(getWeekDates());
+  const [isDownloading, setIsDownloading] = useState(false);
 
   function getWeekDates() {
     const date = new Date();
-    const day = date.getDay(); // 0 is Sunday, 6 is Saturday
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust to get Monday
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
 
     const monday = new Date(date);
     monday.setDate(diff);
@@ -120,10 +123,6 @@ const MoodPage = () => {
     }
   };
 
-  // useEffect(() => {
-  //   localStorage.setItem("todayMoods", JSON.stringify(todayMoods));
-  // }, [todayMoods]);
-
   const handleMoodSelect = async (mood) => {
     setCurrentMood(mood);
     if (synth) {
@@ -139,27 +138,94 @@ const MoodPage = () => {
       toast.error("Could not save mood. Try again!");
     }
   };
-  //   console.log(todayMoods);
 
   const playTodayMelody = async () => {
-    if (!synth || todayMoods.length == 0) {
+    if (!synth || todayMoods.length === 0) {
       toast.error("No moods recorded yet to play!");
       return;
     }
     setIsPlaying(true);
     const notes = todayMoods.map((mood) => mood.note);
-    const sequence = new Tone.Sequence((time, note) => {
-      synth.triggerAttackRelease(note, "8n", time);
-    }, notes).start(0);
-    await Tone.start();
-    Tone.Transport.start();
-
-    // Stop after playing the sequence
-    setTimeout(() => {
+    try {
+      await Tone.start();
+      const now = Tone.now();
+      notes.forEach((note, index) => {
+        synth.triggerAttackRelease(note, "8n", now + index * 0.5);
+      });
       Tone.Transport.stop();
-      sequence.dispose();
+      setTimeout(() => {
+        setIsPlaying(false);
+      }, notes.length * 500 + 500);
+    } catch (error) {
+      console.error("Error playing today's melody:", error);
+      toast.error("Error playing melody. Please try again.");
       setIsPlaying(false);
-    }, notes.length * 500 + 500);
+    }
+  };
+
+  const playWeeklyMelody = async () => {
+    const weeklyMoodsList = Object.values(weeklyMoods).flat();
+    if (!synth || weeklyMoodsList.length === 0) {
+      toast.error("No moods recorded this week to play!");
+      return;
+    }
+
+    setIsPlaying(true);
+    const notes = weeklyMoodsList.map((mood) => mood.note);
+    try {
+      await Tone.start();
+      const now = Tone.now();
+      notes.forEach((note, index) => {
+        synth.triggerAttackRelease(note, "8n", now + index * 0.5);
+      });
+      Tone.Transport.stop();
+      setTimeout(() => {
+        setIsPlaying(false);
+      }, notes.length * 500 + 500);
+    } catch (error) {
+      console.error("Error playing today's melody:", error);
+      toast.error("Error playing melody. Please try again.");
+      setIsPlaying(false);
+    }
+  };
+
+  const downloadMelody = async (type) => {
+    let notes = [];
+    let fileName = "";
+    if (type === "today") {
+      if (todayMoods.length === 0) {
+        alert("No moods recorded today to download!");
+        return;
+      }
+      notes = todayMoods.map((mood) => mood.note);
+      fileName = `MoodMelody_${new Date()
+        .toLocaleDateString()
+        .replace(/\//g, "-")}.wav`;
+    } else if (type === "weekly") {
+      const weeklyMoodsList = Object.values(weeklyMoods).flat();
+      if (weeklyMoodsList.length === 0) {
+        alert("No moods recorded this week to download!");
+        return;
+      }
+      notes = weeklyMoodsList.map((mood) => mood.note);
+      fileName = `WeeklyMoodMelody_${currentWeek[0].formattedDate.replace(
+        /\s/g,
+        ""
+      )}_${currentWeek[6].formattedDate.replace(/\s/g, "")}.wav`;
+    } else {
+      alert("Invalid melody type selected.");
+      return;
+    }
+
+    try {
+      setIsDownloading(true);
+      await audioService.generateAudio(notes, fileName);
+    } catch (error) {
+      console.error("Error downloading melody:", error);
+      alert("There was an error generating your melody. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const navigateWeek = (direction) => {
@@ -170,23 +236,8 @@ const MoodPage = () => {
     } else {
       newDate.setDate(firstDayofCurrentWeek.getDate() + 7);
     }
-
     setCurrentWeek(getWeekDates(newDate));
   };
-
-  // const resetToday = async () => {
-  //   if (todayMoods.length === 0) return;
-  //   try {
-  //     const today = new Date();
-  //     today.setHours(0, 0, 0, 0);
-  //     await moodService.deleteTodayMoods(today);
-  //     setTodayMoods([]);
-  //     toast.success("Reset today's moods");
-  //   } catch (error) {
-  //     console.error("Error resetting moods:", error);
-  //     toast.error("Failed to reset your moods. Please try again.");
-  //   }
-  // };
 
   if (isLoading) {
     return (
@@ -198,7 +249,7 @@ const MoodPage = () => {
       </div>
     );
   }
-  // console.log(weeklyMoods);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -226,6 +277,18 @@ const MoodPage = () => {
             >
               <Calendar className="mr-1 w-4 h-4" /> Weekly
             </button>
+          </div>
+        </div>
+
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-sm font-medium mb-2">Mood Legend</h3>
+          <div className="flex flex-wrap gap-3">
+            {moodOptions.map((mood) => (
+              <div key={mood.name} className="flex items-center gap-2">
+                <MoodShape mood={mood} size="small" />
+                <span className="text-xs">{mood.name}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -269,15 +332,15 @@ const MoodPage = () => {
                     No moods recorded yet. Select a mood above to begin.
                   </p>
                 ) : (
-                  todayMoods.map((val, idx) => (
+                  todayMoods.map((mood, idx) => (
                     <div
                       key={idx}
-                      className={`${val.color} p-3 rounded-full w-10 h-10 flex items-center justify-center transition-transform hover:scale-110`}
                       onClick={() =>
-                        synth?.triggerAttackRelease(val.note, "8n")
+                        synth?.triggerAttackRelease(mood.note, "8n")
                       }
-                      title={val.mood}
-                    />
+                    >
+                      <MoodShape mood={mood} size="full" />
+                    </div>
                   ))
                 )}
               </div>
@@ -297,7 +360,7 @@ const MoodPage = () => {
               </button>
 
               <button
-                // onClick={downloadMelody}
+                onClick={() => downloadMelody("today")}
                 disabled={todayMoods.length === 0}
                 className={`flex items-center px-4 py-2 rounded-md ${
                   todayMoods.length === 0
@@ -305,20 +368,9 @@ const MoodPage = () => {
                     : "bg-green-500 hover:bg-green-600 text-white"
                 }`}
               >
-                <Download className="mr-1 w-4 h-4" /> Download Melody
+                <Download className="mr-1 w-4 h-4" />{" "}
+                {isDownloading ? "Downloading..." : "Download Melody"}
               </button>
-
-              {/* <button
-            onClick={resetToday}
-            disabled={todayMoods.length === 0}
-            className={`flex items-center px-4 py-2 rounded-md ${
-              todayMoods.length === 0
-                ? "bg-gray-300 text-gray-500"
-                : "bg-red-100 hover:bg-red-200 text-red-800"
-            }`}
-          >
-            <LogOut className="mr-1 w-4 h-4" /> Reset
-          </button> */}
             </div>
           </>
         ) : (
@@ -375,12 +427,12 @@ const MoodPage = () => {
                         dayMoods.map((mood, idx) => (
                           <div
                             key={idx}
-                            className={`${mood.color} rounded-full w-6 h-6 flex items-center justify-center transition-transform hover:scale-110`}
                             onClick={() =>
                               synth?.triggerAttackRelease(mood.note, "8n")
                             }
-                            title={mood.name}
-                          />
+                          >
+                            <MoodShape mood={mood} size="small" />
+                          </div>
                         ))
                       )}
                     </div>
@@ -390,21 +442,32 @@ const MoodPage = () => {
             </div>
             <div className="p-4 bg-gray-50 rounded-lg mb-6">
               <h3 className="text-lg font-medium mb-3">Weekly Mood Pattern</h3>
-              <div className="h-32 flex items-end">
+
+              {/* Debug information */}
+              <div className="text-xs text-gray-500 mb-2">
+                Data loaded:{" "}
+                {Object.keys(weeklyMoods).length > 0 ? "Yes" : "No"} | Total
+                moods: {Object.values(weeklyMoods).flat().length}
+              </div>
+
+              <div className="h-32 flex items-end space-x-1 border-b border-gray-200">
                 {currentWeek.map((day) => {
                   const dayKey = formatDateKey(day.date);
                   const dayMoods = weeklyMoods[dayKey] || [];
-                  const height = dayMoods.length
-                    ? Math.min(100, dayMoods.length * 15 + 10)
-                    : 10;
+                  // Make bars more visible - minimum height of 20% and larger multiplier
+                  const height =
+                    dayMoods.length > 0
+                      ? Math.min(100, 30 + dayMoods.length * 15)
+                      : 10;
 
                   return (
                     <div
                       key={dayKey}
                       className="flex-1 flex flex-col items-center"
                     >
+                      <div className="text-xs mb-1">{dayMoods.length || 0}</div>
                       <div
-                        className="w-full bg-blue-400 rounded-t-md transition-all duration-500"
+                        className="w-4/5 bg-blue-500 rounded-t-md transition-all duration-700 ease-out transform hover:scale-105"
                         style={{ height: `${height}%` }}
                       ></div>
                       <div className="text-xs mt-1">{day.dayName}</div>
@@ -415,7 +478,7 @@ const MoodPage = () => {
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <button
-                // onClick={playWeeklyMelody}
+                onClick={playWeeklyMelody}
                 disabled={
                   isPlaying || Object.values(weeklyMoods).flat().length === 0
                 }
@@ -429,6 +492,7 @@ const MoodPage = () => {
                 {isPlaying ? "Playing..." : "Play Weekly Melody"}
               </button>
               <button
+                onClick={() => downloadMelody("weekly")}
                 disabled={Object.values(weeklyMoods).flat().length === 0}
                 className={`flex items-center px-4 py-2 rounded-md ${
                   Object.values(weeklyMoods).flat().length === 0
@@ -436,7 +500,8 @@ const MoodPage = () => {
                     : "bg-green-500 hover:bg-green-600 text-white"
                 }`}
               >
-                <Download className="mr-1 w-4 h-4" /> Download Weekly Melody
+                <Download className="mr-1 w-4 h-4" />{" "}
+                {isDownloading ? "Downloading..." : "Download Weekly Melody"}
               </button>
             </div>
           </>

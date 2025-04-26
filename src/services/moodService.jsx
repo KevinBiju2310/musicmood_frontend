@@ -12,12 +12,11 @@ export const moodService = {
   },
   getMoodsByDateRange: async (startDate, endDate) => {
     try {
-      const start = startDate.toISOString();
-      const end = endDate.toISOString();
+      const start = startDate.toISOString()
+      const end = endDate.toISOString()
       const response = await axiosInstance.get(
         `/range?start=${start}&end=${end}`
       );
-      console.log(response);
       return response.data.moods;
     } catch (error) {
       console.error("Error adding mood:", error);
