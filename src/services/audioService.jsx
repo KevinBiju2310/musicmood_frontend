@@ -1,47 +1,37 @@
 import * as Tone from "tone";
 
 export const audioService = {
-  generateAudio: async (notes, filename) => {
-    try {
-      if (!Array.isArray(notes) || notes.length === 0) {
-        throw new Error("No notes provided.");
-      }
+  generateAudio: async (notes, filename = "mood-melody.wav") => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const recorder = new Tone.Recorder();
+        const synth = new Tone.Synth().connect(recorder);
 
-      if (Tone.context.state !== "running") {
+        recorder.start();
+
         await Tone.start();
+        const now = Tone.now();
+
+        notes.forEach((note, index) => {
+          synth.triggerAttackRelease(note, "8n", now + index * 0.5);
+        });
+
+        setTimeout(async () => {
+          const recording = await recorder.stop();
+
+          const url = URL.createObjectURL(recording);
+          const anchor = document.createElement("a");
+          anchor.download = filename;
+          anchor.href = url;
+          anchor.click();
+
+          URL.revokeObjectURL(url);
+          resolve(true);
+        }, notes.length * 500 + 500);
+      } catch (error) {
+        console.error("Error generating audio:", error);
+        reject(error);
       }
-
-      const recorder = new Tone.Recorder();
-      const synth = new Tone.Synth().connect(recorder);
-
-      await recorder.start();
-
-      const now = Tone.now();
-      const totalDuration = notes.length * 0.5 + 0.2;
-
-      notes.forEach((note, index) => {
-        synth.triggerAttackRelease(note, "8n", now + index * 0.5);
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, totalDuration * 1000));
-
-      const recording = await recorder.stop();
-
-      synth.dispose();
-      recorder.dispose();
-
-      const url = URL.createObjectURL(recording);
-      const anchor = document.createElement("a");
-      anchor.download = filename;
-      anchor.href = url;
-      anchor.click();
-
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-      return true;
-    } catch (error) {
-      console.error("Error generating audio:", error);
-      throw error;
-    }
+    });
   },
 };

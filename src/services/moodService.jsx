@@ -46,15 +46,6 @@ export const moodService = {
       throw error;
     }
   },
-  getWeeklyMoods: async () => {
-    try {
-      const response = await axiosInstance.get("/weekly");
-      return response.data.moods;
-    } catch (error) {
-      console.error("Error fetching weekly moods:", error);
-      throw error;
-    }
-  },
   deleteMoods: async (moodIds) => {
     try {
       const response = await axiosInstance.delete("/delete", {
