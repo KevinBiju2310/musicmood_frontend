@@ -3,6 +3,8 @@
 This is the frontend client for **MusicMood**, built with React and styled using TailwindCSS.  
 It allows users to authenticate via Google, select moods, and listen to generated melodies based on their emotional state.
 
+Check out the walkthrough video here:  
+👉 [Watch on YouTube](https://youtu.be/taqc5El3xg0)
 ---
 
 ## 🛠️ Tech Stack
