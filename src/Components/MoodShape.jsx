@@ -1,4 +1,3 @@
-// components/MoodShape.js
 import React from "react";
 
 const MoodShape = ({ mood, size }) => {
@@ -79,8 +78,7 @@ const MoodShape = ({ mood, size }) => {
           <div
             className={`${mood.color} w-full h-full rounded-full`}
             style={{
-              clipPath: "ellipse(50% 50% at 50% 50%)",
-              borderRadius: "40% 40% 60% 60% / 60% 30% 70% 40%",
+              borderRadius: "40% 40% 60% 60% / 40% 40% 60% 60%",
             }}
           />
         </div>
