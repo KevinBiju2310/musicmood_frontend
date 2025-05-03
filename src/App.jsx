@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import HomePage from "./pages/HomePage";
 import MoodPage from "./pages/MoodPage";
+import ProtectedRoute from "./ProtectedRoute";
 
 const App = () => {
   return (
@@ -21,7 +22,14 @@ const App = () => {
       />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/mood" element={<MoodPage />} />
+        <Route
+          path="/mood"
+          element={
+            <ProtectedRoute>
+              <MoodPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );

@@ -69,23 +69,6 @@ const Navbar = () => {
             MusicMood
           </span>
         </div>
-        {/* <div className="hidden md:flex space-x-8">
-          <a href="#features" className="hover:text-pink-300 transition-colors">
-            Features
-          </a>
-          <a
-            href="#how-it-works"
-            className="hover:text-pink-300 transition-colors"
-          >
-            How It Works
-          </a>
-          <a
-            href="#testimonials"
-            className="hover:text-pink-300 transition-colors"
-          >
-            Testimonials
-          </a>
-        </div> */}
         <div className="flex space-x-4">
           {user ? (
             <button

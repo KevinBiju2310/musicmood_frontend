@@ -11,6 +11,7 @@ import {
   Music,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import * as Tone from "tone";
 import MoodShape from "../Components/MoodShape";
@@ -86,6 +87,7 @@ const MoodPage = () => {
     if (view === "weekly") {
       fetchWeeklyMoods();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, currentWeek]);
 
   const fetchWeeklyMoods = async () => {
