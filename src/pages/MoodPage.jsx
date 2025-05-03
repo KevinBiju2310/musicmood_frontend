@@ -3,8 +3,6 @@ import Navbar from "../Components/Navbar";
 import {
   Play,
   Download,
-  LogOut,
-  Edit,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -35,6 +33,7 @@ const MoodPage = () => {
   const [synth, setSynth] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(false);
   const [view, setView] = useState("today");
   const [currentWeek, setCurrentWeek] = useState(getWeekDates());
   const [isDownloading, setIsDownloading] = useState(false);
@@ -87,11 +86,11 @@ const MoodPage = () => {
     if (view === "weekly") {
       fetchWeeklyMoods();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, currentWeek]);
 
   const fetchWeeklyMoods = async () => {
-    setIsLoading(true);
+    setIsDataLoading(true);
     try {
       const weekData = {};
       for (const dayInfo of currentWeek) {
@@ -112,12 +111,11 @@ const MoodPage = () => {
       console.error("Error fetching weekly moods:", error);
       toast.error("Failed to load your weekly moods. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsDataLoading(false);
     }
   };
 
   const fetchTodayMoods = async () => {
-    setIsLoading(true);
     try {
       const data = await moodService.getTodayMoods();
       const moods = data.map((item) => item.mood);
@@ -267,16 +265,17 @@ const MoodPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-xl shadow-xl overflow-hidden mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold text-white">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8">
+        <div className="bg-white rounded-xl shadow-xl overflow-hidden mb-6 sm:mb-8">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 sm:px-6 md:px-8 py-4 sm:py-6">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white text-center sm:text-left">
                 Your Mood Melody
               </h1>
-              <div className="flex space-x-3">
+              <div className="flex space-x-2 sm:space-x-3">
                 <button
-                  className={`px-5 py-2 rounded-full flex items-center transition-all ${
+                  className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-full flex items-center transition-all text-sm sm:text-base ${
                     view === "today"
                       ? "bg-white text-blue-700 shadow-md"
                       : "bg-blue-500 text-white bg-opacity-30 hover:bg-opacity-40"
@@ -286,30 +285,32 @@ const MoodPage = () => {
                   Today
                 </button>
                 <button
-                  className={`flex items-center px-5 py-2 rounded-full transition-all ${
+                  className={`flex items-center px-3 sm:px-5 py-1.5 sm:py-2 rounded-full transition-all text-sm sm:text-base ${
                     view === "weekly"
                       ? "bg-white text-blue-700 shadow-md"
                       : "bg-blue-500 text-white bg-opacity-30 hover:bg-opacity-40"
                   }`}
                   onClick={() => setView("weekly")}
                 >
-                  <Calendar className="mr-2 w-4 h-4" /> Weekly
+                  <Calendar className="mr-1 sm:mr-2 w-3 h-3 sm:w-4 sm:h-4" />{" "}
+                  Weekly
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="p-8">
+          {/* Content */}
+          <div className="p-4 sm:p-6 md:p-8">
             <AnimatePresence>
               {showAnimation && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="mb-8 p-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl shadow-inner"
+                  className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl shadow-inner"
                 >
-                  <div className="flex justify-center items-center h-32">
-                    <div className="flex items-end space-x-3">
+                  <div className="flex justify-center items-center h-24 sm:h-32">
+                    <div className="flex items-end space-x-2 sm:space-x-3">
                       {[0, 1, 2, 3, 4].map((i) => (
                         <motion.div
                           key={i}
@@ -323,7 +324,7 @@ const MoodPage = () => {
                             repeatType: "reverse",
                             delay: i * 0.1,
                           }}
-                          className="w-4 bg-blue-500 rounded-t-md"
+                          className="w-2 sm:w-4 bg-blue-500 rounded-t-md"
                           style={{ height: 20 }}
                         />
                       ))}
@@ -338,7 +339,7 @@ const MoodPage = () => {
                           repeat: Infinity,
                         }}
                       >
-                        <Music className="w-14 h-14 text-purple-600" />
+                        <Music className="w-10 h-10 sm:w-14 sm:h-14 text-purple-600" />
                       </motion.div>
                       {[0, 1, 2, 3, 4].map((i) => (
                         <motion.div
@@ -353,7 +354,7 @@ const MoodPage = () => {
                             repeatType: "reverse",
                             delay: (i + 5) * 0.1,
                           }}
-                          className="w-4 bg-blue-500 rounded-t-md"
+                          className="w-2 sm:w-4 bg-blue-500 rounded-t-md"
                           style={{ height: 20 }}
                         />
                       ))}
@@ -369,9 +370,11 @@ const MoodPage = () => {
                           transition={{ duration: 0.5 }}
                           className="inline-block"
                         >
-                          <span className="font-medium text-lg">Playing: </span>
+                          <span className="font-medium text-sm sm:text-lg">
+                            Playing:{" "}
+                          </span>
                           <span
-                            className={`px-4 py-2 rounded-full ${todayMoods[activeNoteIndex].color} text-white font-semibold`}
+                            className={`px-3 sm:px-4 py-1 sm:py-2 rounded-full ${todayMoods[activeNoteIndex].color} text-white font-semibold text-sm sm:text-base`}
                           >
                             {todayMoods[activeNoteIndex].name}
                           </span>
@@ -386,7 +389,7 @@ const MoodPage = () => {
                         transition={{ duration: 0.5 }}
                         className="inline-block"
                       >
-                        <span className="font-medium text-lg">
+                        <span className="font-medium text-sm sm:text-lg">
                           Playing Weekly Melody
                         </span>
                       </motion.div>
@@ -396,15 +399,21 @@ const MoodPage = () => {
               )}
             </AnimatePresence>
 
-            <div className="mb-8 p-5 bg-gray-50 rounded-xl border border-gray-100">
-              <h3 className="text-sm font-medium mb-3 text-gray-700">
+            {/* Mood Legend */}
+            <div className="mb-6 sm:mb-8 p-3 sm:p-5 bg-gray-50 rounded-xl border border-gray-100">
+              <h3 className="text-xs sm:text-sm font-medium mb-2 sm:mb-3 text-gray-700">
                 Mood Legend
               </h3>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-2 sm:gap-4">
                 {moodOptions.map((mood) => (
-                  <div key={mood.name} className="flex items-center gap-2">
+                  <div
+                    key={mood.name}
+                    className="flex items-center gap-1 sm:gap-2"
+                  >
                     <MoodShape mood={mood} size="small" />
-                    <span className="text-sm font-medium">{mood.name}</span>
+                    <span className="text-xs sm:text-sm font-medium">
+                      {mood.name}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -412,15 +421,15 @@ const MoodPage = () => {
 
             {view === "today" ? (
               <>
-                <div className="mb-10">
-                  <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+                <div className="mb-6 sm:mb-10">
+                  <h2 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-gray-800">
                     How are you feeling today?
                   </h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
                     {moodOptions.map((mood) => (
                       <button
                         key={mood.name}
-                        className={`p-4 rounded-lg transition-all shadow-sm hover:shadow ${
+                        className={`p-3 sm:p-4 rounded-lg transition-all shadow-sm hover:shadow text-sm sm:text-base ${
                           currentMood?.name === mood.name
                             ? `${mood.color} text-white font-medium`
                             : "bg-white hover:bg-gray-50 border border-gray-100"
@@ -432,27 +441,20 @@ const MoodPage = () => {
                     ))}
                   </div>
                 </div>
-                <div className="mt-10 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-semibold text-gray-800">
+                <div className="mt-6 sm:mt-10 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-0">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
                       Today's Moods
                     </h3>
                     <div className="flex items-center">
-                      <span className="text-sm text-gray-500 mr-4">
+                      <span className="text-xs sm:text-sm text-gray-500 mr-2 sm:mr-4">
                         {todayMoods.length}/3 moods recorded
                       </span>
-                      {/* {todayMoods.length > 0 && (
-                        <button
-                          className="flex items-center text-sm px-4 py-2 bg-purple-100 hover:bg-purple-200 rounded-lg text-purple-800 transition-all font-medium"
-                        >
-                          <Edit className="mr-2 w-4 h-4" /> Remix
-                        </button>
-                      )} */}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-4 mt-5">
+                  <div className="flex flex-wrap gap-3 sm:gap-4 mt-4 sm:mt-5 justify-center sm:justify-start">
                     {todayMoods.length === 0 ? (
-                      <p className="text-gray-500 py-4">
+                      <p className="text-sm sm:text-base text-gray-500 py-3 sm:py-4 w-full text-center">
                         No moods recorded yet. Select a mood above to begin.
                       </p>
                     ) : (
@@ -470,46 +472,62 @@ const MoodPage = () => {
                     )}
                   </div>
                 </div>
-                <div className="mt-8 flex flex-wrap gap-4">
+                <div className="mt-6 sm:mt-8 flex flex-wrap gap-3 sm:gap-4 justify-center sm:justify-start">
                   <button
                     onClick={playTodayMelody}
                     disabled={isPlaying || todayMoods.length === 0}
-                    className={`flex items-center px-6 py-3 rounded-lg font-medium shadow-sm transition-all ${
+                    className={`flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium shadow-sm transition-all text-sm sm:text-base ${
                       isPlaying || todayMoods.length === 0
                         ? "bg-gray-300 text-gray-500"
                         : "bg-blue-600 hover:bg-blue-700 text-white"
                     }`}
                   >
-                    <Play className="mr-2 w-5 h-5" />{" "}
+                    <Play className="mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />{" "}
                     {isPlaying ? "Playing..." : "Play Melody"}
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <div className="flex justify-between items-center mb-6">
+                {isDataLoading && (
+                  <div className="flex justify-center my-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
+
+                {/* Weekly View Navigation */}
+                <div className="flex justify-between items-center mb-4 sm:mb-6">
                   <button
                     onClick={() => navigateWeek("prev")}
-                    className="p-3 bg-white hover:bg-gray-50 rounded-lg shadow-sm border border-gray-100 flex items-center"
+                    className="p-2 sm:p-3 bg-white hover:bg-gray-50 rounded-lg shadow-sm border border-gray-100 flex items-center text-sm sm:text-base"
+                    disabled={isDataLoading}
                   >
-                    <ChevronLeft className="w-5 h-5 text-gray-600" />
-                    <span className="ml-1 text-gray-700">Previous</span>
+                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                    <span className="ml-1 text-gray-700 hidden sm:inline">
+                      Previous
+                    </span>
                   </button>
 
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    Week of {currentWeek[0].formattedDate} -{" "}
+                  <h2 className="text-sm sm:text-lg md:text-xl font-semibold text-gray-800 text-center">
+                    <span className="hidden sm:inline">Week of </span>
+                    {currentWeek[0].formattedDate} -{" "}
                     {currentWeek[6].formattedDate}
                   </h2>
 
                   <button
                     onClick={() => navigateWeek("next")}
-                    className="p-3 bg-white hover:bg-gray-50 rounded-lg shadow-sm border border-gray-100 flex items-center"
+                    className="p-2 sm:p-3 bg-white hover:bg-gray-50 rounded-lg shadow-sm border border-gray-100 flex items-center text-sm sm:text-base"
+                    disabled={isDataLoading}
                   >
-                    <span className="mr-1 text-gray-700">Next</span>
-                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                    <span className="mr-1 text-gray-700 hidden sm:inline">
+                      Next
+                    </span>
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   </button>
                 </div>
-                <div className="grid grid-cols-7 gap-3 mb-8">
+
+                {/* Weekly Calendar Grid */}
+                <div className="grid grid-cols-7 gap-1 sm:gap-3 mb-6 sm:mb-8">
                   {currentWeek.map((day) => {
                     const dayKey = formatDateKey(day.date);
                     const dayMoods = weeklyMoods[dayKey] || [];
@@ -519,28 +537,28 @@ const MoodPage = () => {
                     return (
                       <div
                         key={dayKey}
-                        className={`p-4 rounded-lg shadow-sm ${
+                        className={`p-2 sm:p-4 rounded-lg shadow-sm ${
                           isToday
                             ? "bg-blue-50 border-2 border-blue-200"
                             : "bg-white border border-gray-100"
                         }`}
                       >
-                        <div className="text-center mb-3">
+                        <div className="text-center mb-1 sm:mb-3">
                           <div
-                            className={`text-base font-semibold ${
+                            className={`text-xs sm:text-base font-semibold ${
                               isToday ? "text-blue-700" : "text-gray-700"
                             }`}
                           >
                             {day.dayName}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-xs text-gray-500">
                             {day.formattedDate}
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2 justify-center min-h-16">
+                        <div className="flex flex-wrap gap-1 sm:gap-2 justify-center min-h-12 sm:min-h-16">
                           {dayMoods.length === 0 ? (
-                            <div className="w-full text-center text-xs text-gray-400 mt-3">
+                            <div className="w-full text-center text-xs text-gray-400 mt-1 sm:mt-3">
                               No moods
                             </div>
                           ) : (
@@ -562,36 +580,35 @@ const MoodPage = () => {
                   })}
                 </div>
 
-                <div className="mt-8 flex flex-wrap gap-4">
+                {/* Weekly Controls */}
+                <div className="mt-6 sm:mt-8 flex flex-wrap gap-3 sm:gap-4 justify-center sm:justify-start">
                   <button
                     onClick={playWeeklyMelody}
                     disabled={
                       isPlaying ||
                       Object.values(weeklyMoods).flat().length === 0
                     }
-                    className={`flex items-center px-6 py-3 rounded-lg font-medium shadow-sm transition-all ${
+                    className={`flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium shadow-sm transition-all text-sm sm:text-base ${
                       isPlaying ||
                       Object.values(weeklyMoods).flat().length === 0
                         ? "bg-gray-300 text-gray-500"
                         : "bg-blue-600 hover:bg-blue-700 text-white"
                     }`}
                   >
-                    <Play className="mr-2 w-5 h-5" />{" "}
-                    {isPlaying ? "Playing..." : "Play Weekly Melody"}
+                    <Play className="mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />{" "}
+                    {isPlaying ? "Playing..." : "Play Weekly"}
                   </button>
                   <button
                     onClick={() => downloadMelody()}
                     disabled={Object.values(weeklyMoods).flat().length === 0}
-                    className={`flex items-center px-6 py-3 rounded-lg font-medium shadow-sm transition-all ${
+                    className={`flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium shadow-sm transition-all text-sm sm:text-base ${
                       Object.values(weeklyMoods).flat().length === 0
                         ? "bg-gray-300 text-gray-500"
                         : "bg-green-600 hover:bg-green-700 text-white"
                     }`}
                   >
-                    <Download className="mr-2 w-5 h-5" />{" "}
-                    {isDownloading
-                      ? "Downloading..."
-                      : "Download Weekly Melody"}
+                    <Download className="mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />{" "}
+                    {isDownloading ? "Downloading..." : "Download Melody"}
                   </button>
                 </div>
               </>
