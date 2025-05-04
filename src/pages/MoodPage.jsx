@@ -166,7 +166,6 @@ const MoodPage = () => {
           setActiveNoteIndex(index);
         }, index * 500);
       });
-      Tone.Transport.stop();
       setTimeout(() => {
         setIsPlaying(false);
         setShowAnimation(false);
@@ -200,7 +199,6 @@ const MoodPage = () => {
           setActiveNoteIndex(index);
         }, index * 500);
       });
-      Tone.Transport.stop();
       setTimeout(() => {
         setIsPlaying(false);
         setShowAnimation(false);
