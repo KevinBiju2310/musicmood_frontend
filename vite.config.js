@@ -10,7 +10,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "robots.txt", "apple-touch-icon.png"],
       manifest: {
-        name: "My MERN App",
+        name: "MusicMood",
         short_name: "MERNApp",
         description: "A MERN stack app with PWA support",
         theme_color: "#ffffff",
